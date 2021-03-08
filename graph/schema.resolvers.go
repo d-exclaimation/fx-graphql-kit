@@ -47,7 +47,7 @@ func (r *thoughtResolver) User(ctx context.Context, obj *model.Thought) (*model.
 	return &model.User{
 		ID:    obj.UserID,
 		Name:  "anom",
-		Email: "vincentlimchen@gmail.com",
+		Email: "someone-somewhere@gmail.com",
 	}, nil
 }
 
