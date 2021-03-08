@@ -1,0 +1,28 @@
+type Thought {
+  id: ID!
+  title: String!
+  body: String!
+  imageURL: String
+  user: User!
+}
+
+type User {
+  id: ID!
+  name: String!
+  email: String!
+}
+
+type Query {
+  thoughts: [Thought!]!
+}
+
+input NewThought {
+  title: String!
+  body: String!
+  imageURL: String
+  userId: String!
+}
+
+type Mutation {
+  createThought(input: NewThought!): Thought!
+}
