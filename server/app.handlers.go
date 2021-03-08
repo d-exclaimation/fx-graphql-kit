@@ -22,7 +22,7 @@ type AppHandlers struct {
 	Playground  gin.HandlerFunc
 }
 
-func NewAppHandlers(module generated.Config) *AppHandlers {
+func AppHandlersProvider(module generated.Config) *AppHandlers {
 	return &AppHandlers{
 		Middlewares: []gin.HandlerFunc{middleware.GinContextToContextMiddleware()},
 		GQLHandler:  GraphqlHandler(module),
@@ -38,7 +38,7 @@ func GraphqlHandler(module generated.Config) gin.HandlerFunc {
 }
 
 func PlaygroundHandler() gin.HandlerFunc {
-	playgroundHandler := playground.Handler("Nodes-Graph API Playground", "/query")
+	playgroundHandler := playground.Handler("Nodes-Graph API Playground", graphqlPath)
 	return func(ctx *gin.Context) {
 		playgroundHandler.ServeHTTP(ctx.Writer, ctx.Request)
 	}

@@ -20,6 +20,7 @@ type Thought struct {
 	Title     string
 	Body      string
 	ImageURL  *string
+	UserID 	  uint
 }
 
 func (s *Thought) ToGraphQL() *model.Thought {
@@ -28,5 +29,16 @@ func (s *Thought) ToGraphQL() *model.Thought {
 		Title:    s.Title,
 		Body:     s.Body,
 		ImageURL: s.ImageURL,
+		UserID:   fmt.Sprintf("%d", s.UserID),
 	}
+}
+
+type ThoughtsArray []*Thought
+
+func (arr ThoughtsArray) ToGraphQLs() []*model.Thought {
+	res := make([]*model.Thought, len(arr))
+	for i, thought := range arr {
+		res[i] = thought.ToGraphQL()
+	}
+	return res
 }

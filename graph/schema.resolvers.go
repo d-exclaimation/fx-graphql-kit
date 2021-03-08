@@ -5,6 +5,8 @@ package graph
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/d-exclaimation/fx-graphql-kit/graph/generated"
 	"github.com/d-exclaimation/fx-graphql-kit/graph/model"
 )
@@ -19,13 +21,25 @@ func (r *mutationResolver) CreateThought(ctx context.Context, input model.NewTho
 	return newThought, nil
 }
 
+func (r *mutationResolver) UpdateThought(ctx context.Context, id int, userID int, input *model.NewThought) (*model.Thought, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
+func (r *mutationResolver) DeleteThought(ctx context.Context, id int, userID int) (*model.Thought, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *queryResolver) Thoughts(ctx context.Context) ([]*model.Thought, error) {
 	return make([]*model.Thought, 0), nil
 }
 
+func (r *queryResolver) Thought(ctx context.Context, id int) (*model.Thought, error) {
+	panic(fmt.Errorf("not implemented"))
+}
+
 func (r *thoughtResolver) User(ctx context.Context, obj *model.Thought) (*model.User, error) {
 	return &model.User{
-		ID:    "anom",
+		ID:    obj.UserID,
 		Name:  "anom",
 		Email: "vincentlimchen@gmail.com",
 	}, nil
