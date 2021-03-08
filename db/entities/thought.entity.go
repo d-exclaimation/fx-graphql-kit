@@ -14,7 +14,7 @@ import (
 	"gorm.io/gorm"
 )
 
-
+// Thought Database Entity
 type Thought struct {
 	gorm.Model
 	Title     string
@@ -23,6 +23,7 @@ type Thought struct {
 	UserID 	  uint
 }
 
+// Convert to GraphQL Schema
 func (s *Thought) ToGraphQL() *model.Thought {
 	return &model.Thought{
 		ID:       fmt.Sprintf("%d", s.ID),
@@ -33,8 +34,10 @@ func (s *Thought) ToGraphQL() *model.Thought {
 	}
 }
 
+// Method Injection
 type ThoughtsArray []*Thought
 
+// Convert all to GraphQL Schema
 func (arr ThoughtsArray) ToGraphQLs() []*model.Thought {
 	res := make([]*model.Thought, len(arr))
 	for i, thought := range arr {

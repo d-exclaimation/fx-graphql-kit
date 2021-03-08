@@ -26,6 +26,6 @@ input NewThought {
 
 type Mutation {
   createThought(input: NewThought!): Thought!
-  updateThought(id: Int!, userId: Int!, input: NewThought): Thought
+  updateThought(id: Int!, userId: Int!, input: NewThought!): Thought
   deleteThought(id: Int!, userId: Int!): Thought
 }

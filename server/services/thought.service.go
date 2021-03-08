@@ -14,16 +14,19 @@ import (
 	"gorm.io/gorm"
 )
 
+// ThoughtService Struct
 type ThoughtService struct {
 	db *gorm.DB
 }
 
+// Fx Provider
 func ThoughtServiceProvider(db *gorm.DB) *ThoughtService {
 	return &ThoughtService{
 		db: db,
 	}
 }
 
+// Methods
 func (srv *ThoughtService) CreateNew(input model.NewThought) *entities.Thought {
 	thought := &entities.Thought{
 		Title:    input.Title,

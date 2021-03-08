@@ -16,6 +16,7 @@ import (
 	"log"
 )
 
+// Fx Provider
 func PostgresProvider() *gorm.DB {
 	conn, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  config.GetDatabaseURL(),

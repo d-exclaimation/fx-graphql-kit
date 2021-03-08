@@ -16,12 +16,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// AppHandlers / Controller
 type AppHandlers struct {
 	Middlewares []gin.HandlerFunc
 	GQLHandler  gin.HandlerFunc
 	Playground  gin.HandlerFunc
 }
 
+// Fx Provider
 func AppHandlersProvider(module generated.Config) *AppHandlers {
 	return &AppHandlers{
 		Middlewares: []gin.HandlerFunc{middleware.GinContextToContextMiddleware()},
@@ -30,6 +32,7 @@ func AppHandlersProvider(module generated.Config) *AppHandlers {
 	}
 }
 
+// GraphQL Query Handler
 func GraphqlHandler(module generated.Config) gin.HandlerFunc {
 	graphqlServer := handler.NewDefaultServer(generated.NewExecutableSchema(module))
 	return func(ctx *gin.Context) {
@@ -37,6 +40,7 @@ func GraphqlHandler(module generated.Config) gin.HandlerFunc {
 	}
 }
 
+// Playground Handler
 func PlaygroundHandler() gin.HandlerFunc {
 	playgroundHandler := playground.Handler("Nodes-Graph API Playground", graphqlPath)
 	return func(ctx *gin.Context) {

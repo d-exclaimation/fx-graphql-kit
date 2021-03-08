@@ -14,6 +14,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Gin Context Middleware
 func GinContextToContextMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), "GinContextKey", c)
@@ -22,6 +23,8 @@ func GinContextToContextMiddleware() gin.HandlerFunc {
 	}
 }
 
+
+// Function to extract context from middleware
 func GinContextFromContext(ctx context.Context) (*gin.Context, error) {
 	ginContext := ctx.Value("GinContextKey")
 	if ginContext == nil {

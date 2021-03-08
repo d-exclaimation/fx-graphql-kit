@@ -47,7 +47,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		CreateThought func(childComplexity int, input model.NewThought) int
 		DeleteThought func(childComplexity int, id int, userID int) int
-		UpdateThought func(childComplexity int, id int, userID int, input *model.NewThought) int
+		UpdateThought func(childComplexity int, id int, userID int, input model.NewThought) int
 	}
 
 	Query struct {
@@ -72,7 +72,7 @@ type ComplexityRoot struct {
 
 type MutationResolver interface {
 	CreateThought(ctx context.Context, input model.NewThought) (*model.Thought, error)
-	UpdateThought(ctx context.Context, id int, userID int, input *model.NewThought) (*model.Thought, error)
+	UpdateThought(ctx context.Context, id int, userID int, input model.NewThought) (*model.Thought, error)
 	DeleteThought(ctx context.Context, id int, userID int) (*model.Thought, error)
 }
 type QueryResolver interface {
@@ -132,7 +132,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateThought(childComplexity, args["id"].(int), args["userId"].(int), args["input"].(*model.NewThought)), true
+		return e.complexity.Mutation.UpdateThought(childComplexity, args["id"].(int), args["userId"].(int), args["input"].(model.NewThought)), true
 
 	case "Query.thought":
 		if e.complexity.Query.Thought == nil {
@@ -301,7 +301,7 @@ input NewThought {
 
 type Mutation {
   createThought(input: NewThought!): Thought!
-  updateThought(id: Int!, userId: Int!, input: NewThought): Thought
+  updateThought(id: Int!, userId: Int!, input: NewThought!): Thought
   deleteThought(id: Int!, userId: Int!): Thought
 }`, BuiltIn: false},
 }
@@ -371,10 +371,10 @@ func (ec *executionContext) field_Mutation_updateThought_args(ctx context.Contex
 		}
 	}
 	args["userId"] = arg1
-	var arg2 *model.NewThought
+	var arg2 model.NewThought
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg2, err = ec.unmarshalONewThought2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐNewThought(ctx, tmp)
+		arg2, err = ec.unmarshalNNewThought2githubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐNewThought(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -518,7 +518,7 @@ func (ec *executionContext) _Mutation_updateThought(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateThought(rctx, args["id"].(int), args["userId"].(int), args["input"].(*model.NewThought))
+		return ec.resolvers.Mutation().UpdateThought(rctx, args["id"].(int), args["userId"].(int), args["input"].(model.NewThought))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2938,14 +2938,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return graphql.MarshalBoolean(*v)
-}
-
-func (ec *executionContext) unmarshalONewThought2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐNewThought(ctx context.Context, v interface{}) (*model.NewThought, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputNewThought(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
