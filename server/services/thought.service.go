@@ -37,7 +37,7 @@ func (srv *ThoughtService) CreateNew(input model.NewThought) *entities.Thought {
 	return thought
 }
 
-func (srv *ThoughtService) GetAll() []*entities.Thought {
+func (srv *ThoughtService) GetAll() entities.ThoughtsArray {
 	var todos entities.ThoughtsArray
 	if err := srv.db.Find(&todos).Error; err != nil {
 		return make([]*entities.Thought, 0)
