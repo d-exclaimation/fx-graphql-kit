@@ -5,17 +5,15 @@ package graph
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/d-exclaimation/fx-graphql-kit/graph/generated"
 	"github.com/d-exclaimation/fx-graphql-kit/graph/model"
-	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 func (r *mutationResolver) CreateThought(ctx context.Context, input model.NewThought) (*model.Thought, error) {
-	res := r.srv.CreateNew(input)
-	if res == nil {
-		return nil, gqlerror.Errorf("(%d) Internal Server Error", http.StatusInternalServerError)
+	res, err := r.srv.CreateNew(input)
+	if err != nil {
+		return nil, err.ToGQLError()
 	}
 	return res.ToGraphQL(), nil
 }
@@ -23,7 +21,7 @@ func (r *mutationResolver) CreateThought(ctx context.Context, input model.NewTho
 func (r *mutationResolver) UpdateThought(ctx context.Context, id int, userID int, input model.NewThought) (*model.Thought, error) {
 	res, err := r.srv.UpdateOne(id, userID, input)
 	if err != nil {
-		return nil, gqlerror.Errorf("(%d) %s", err.Type, err.Response)
+		return nil, err.ToGQLError()
 	}
 	return res.ToGraphQL(), nil
 }
@@ -31,17 +29,26 @@ func (r *mutationResolver) UpdateThought(ctx context.Context, id int, userID int
 func (r *mutationResolver) DeleteThought(ctx context.Context, id int, userID int) (*model.Thought, error) {
 	res, err := r.srv.DeleteOne(id, userID)
 	if err != nil {
-		return nil, gqlerror.Errorf("(%d) %s", err.Type, err.Response)
+		return nil, err.ToGQLError()
 	}
 	return res.ToGraphQL(), nil
 }
 
 func (r *queryResolver) Thoughts(ctx context.Context) ([]*model.Thought, error) {
-	return r.srv.GetAll().ToGraphQLs(), nil
+	res, err := r.srv.GetAll()
+	if err != nil {
+		return nil, err.ToGQLError()
+	}
+
+	return res.ToGraphQLs(), nil
 }
 
 func (r *queryResolver) Thought(ctx context.Context, id int) (*model.Thought, error) {
-	return r.srv.GetOne(id).ToGraphQL(), nil
+	res, err := r.srv.GetOne(id)
+	if err != nil {
+		return nil, err.ToGQLError()
+	}
+	return res.ToGraphQL(), nil
 }
 
 func (r *thoughtResolver) User(ctx context.Context, obj *model.Thought) (*model.User, error) {

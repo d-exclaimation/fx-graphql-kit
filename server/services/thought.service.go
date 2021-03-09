@@ -29,7 +29,7 @@ func ThoughtServiceProvider(db *gorm.DB) *ThoughtService {
 }
 
 // Methods
-func (srv *ThoughtService) CreateNew(input model.NewThought) *entities.Thought {
+func (srv *ThoughtService) CreateNew(input model.NewThought) (*entities.Thought, *errors.ServiceError) {
 	thought := &entities.Thought{
 		Title:    input.Title,
 		Body:     input.Body,
@@ -37,35 +37,39 @@ func (srv *ThoughtService) CreateNew(input model.NewThought) *entities.Thought {
 		UserID:   uint(input.UserID),
 	}
 	if err := srv.db.Create(thought).Error; err != nil {
-		return nil
+		return nil, errors.NewServiceError(http.StatusInternalServerError, "Cannot connect to database")
 	}
-	return thought
+	return thought, nil
 }
 
-func (srv *ThoughtService) GetAll() entities.ThoughtsArray {
+func (srv *ThoughtService) GetAll() (entities.ThoughtsArray, *errors.ServiceError) {
 	var todos entities.ThoughtsArray
 	if err := srv.db.Find(&todos).Error; err != nil {
-		return make([]*entities.Thought, 0)
+		return make([]*entities.Thought, 0), errors.NewServiceError(http.StatusInternalServerError, "Cannot fetch data from database")
 	}
-	return todos
+	return todos, nil
 }
 
-func (srv *ThoughtService) GetOne(id int) *entities.Thought {
-	thoughts := srv.GetAll()
+func (srv *ThoughtService) GetOne(id int) (*entities.Thought, *errors.ServiceError) {
+	thoughts, err := srv.GetAll()
+	if err != nil {
+		return nil, err
+	}
+
 	for _, thought := range thoughts {
 		if thought.ID == uint(id) {
-			return thought
+			return thought, nil
 		}
 	}
-	return nil
+	return nil, errors.NewServiceError(http.StatusNotFound, "Cannot find Thought, Invalid ID")
 }
 
 func (srv *ThoughtService) UpdateOne(id int, userId int, input model.NewThought) (*entities.Thought, *errors.ServiceError) {
-	selected := srv.GetOne(id)
+	selected, err := srv.GetOne(id)
 
 	// Errors
-	if selected == nil {
-		return nil, errors.NewServiceError(http.StatusNotFound, "Cannot find Thought, Invalid ID")
+	if err != nil {
+		return nil, err
 	}
 	if selected.UserID != uint(userId) {
 		return nil, errors.NewServiceError(http.StatusForbidden, "Invalid Permission")
@@ -84,9 +88,9 @@ func (srv *ThoughtService) UpdateOne(id int, userId int, input model.NewThought)
 }
 
 func (srv *ThoughtService) DeleteOne(id int, userId int) (*entities.Thought, *errors.ServiceError) {
-	selected := srv.GetOne(id)
-	if selected == nil  {
-		return nil, errors.NewServiceError(http.StatusNotFound, "Cannot find Thought, Invalid ID")
+	selected, err := srv.GetOne(id)
+	if err != nil  {
+		return nil, err
 	}
 
 	if selected.UserID != uint(userId) {
