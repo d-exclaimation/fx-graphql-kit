@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/d-exclaimation/fx-graphql-kit/graph/generated"
 	"github.com/d-exclaimation/fx-graphql-kit/graph/model"
@@ -14,23 +15,23 @@ import (
 func (r *mutationResolver) CreateThought(ctx context.Context, input model.NewThought) (*model.Thought, error) {
 	res := r.srv.CreateNew(input)
 	if res == nil {
-		return nil, gqlerror.Errorf("Internal Server Error")
+		return nil, gqlerror.Errorf("(%d) Internal Server Error", http.StatusInternalServerError)
 	}
 	return res.ToGraphQL(), nil
 }
 
 func (r *mutationResolver) UpdateThought(ctx context.Context, id int, userID int, input model.NewThought) (*model.Thought, error) {
-	res := r.srv.UpdateOne(id, userID, input)
-	if res == nil {
-		return nil, gqlerror.Errorf("Cannot Update Thoughts, Possible Reasons (Invalid UserID / Permission, Invalid Thought)")
+	res, err := r.srv.UpdateOne(id, userID, input)
+	if err != nil {
+		return nil, gqlerror.Errorf("(%d) %s", err.Type, err.Response)
 	}
 	return res.ToGraphQL(), nil
 }
 
 func (r *mutationResolver) DeleteThought(ctx context.Context, id int, userID int) (*model.Thought, error) {
-	res := r.srv.DeleteOne(id, userID)
-	if res == nil {
-		return nil, gqlerror.Errorf("Cannot Delete, Invalid ID(s) for Thought or User")
+	res, err := r.srv.DeleteOne(id, userID)
+	if err != nil {
+		return nil, gqlerror.Errorf("(%d) %s", err.Type, err.Response)
 	}
 	return res.ToGraphQL(), nil
 }

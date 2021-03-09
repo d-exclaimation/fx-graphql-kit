@@ -11,7 +11,9 @@ package services
 import (
 	"github.com/d-exclaimation/fx-graphql-kit/db/entities"
 	"github.com/d-exclaimation/fx-graphql-kit/graph/model"
+	"github.com/d-exclaimation/fx-graphql-kit/server/errors"
 	"gorm.io/gorm"
+	"net/http"
 )
 
 // ThoughtService Struct
@@ -58,10 +60,15 @@ func (srv *ThoughtService) GetOne(id int) *entities.Thought {
 	return nil
 }
 
-func (srv *ThoughtService) UpdateOne(id int, userId int, input model.NewThought) *entities.Thought {
+func (srv *ThoughtService) UpdateOne(id int, userId int, input model.NewThought) (*entities.Thought, *errors.ServiceError) {
 	selected := srv.GetOne(id)
-	if selected == nil || selected.UserID != uint(userId) {
-		return nil
+
+	// Errors
+	if selected == nil {
+		return nil, errors.NewServiceError(http.StatusNotFound, "Cannot find Thought, Invalid ID")
+	}
+	if selected.UserID != uint(userId) {
+		return nil, errors.NewServiceError(http.StatusForbidden, "Invalid Permission")
 	}
 
 	// Retrieve, Update, and Save
@@ -73,13 +80,17 @@ func (srv *ThoughtService) UpdateOne(id int, userId int, input model.NewThought)
 
 	srv.db.Save(selected)
 
-	return selected
+	return selected, nil
 }
 
-func (srv *ThoughtService) DeleteOne(id int, userId int) *entities.Thought {
+func (srv *ThoughtService) DeleteOne(id int, userId int) (*entities.Thought, *errors.ServiceError) {
 	selected := srv.GetOne(id)
-	if selected == nil || selected.UserID != uint(userId) {
-		return nil
+	if selected == nil  {
+		return nil, errors.NewServiceError(http.StatusNotFound, "Cannot find Thought, Invalid ID")
+	}
+
+	if selected.UserID != uint(userId) {
+		return nil, errors.NewServiceError(http.StatusForbidden, "Invalid Permission")
 	}
 
 	copied := &entities.Thought{
@@ -91,5 +102,5 @@ func (srv *ThoughtService) DeleteOne(id int, userId int) *entities.Thought {
 	}
 
 	srv.db.Delete(selected)
-	return copied
+	return copied, nil
 }
