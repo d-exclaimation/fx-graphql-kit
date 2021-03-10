@@ -13,6 +13,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/d-exclaimation/fx-graphql-kit/graph/generated"
 	"github.com/d-exclaimation/fx-graphql-kit/server/middleware"
+	"github.com/d-exclaimation/fx-graphql-kit/server/services"
 	"github.com/gin-gonic/gin"
 )
 
@@ -24,9 +25,12 @@ type AppHandlers struct {
 }
 
 // Fx Provider
-func AppHandlersProvider(module generated.Config) *AppHandlers {
+func AppHandlersProvider(module generated.Config, usrv *services.UserService) *AppHandlers {
 	return &AppHandlers{
-		Middlewares: []gin.HandlerFunc{middleware.GinContextToContextMiddleware()},
+		Middlewares: []gin.HandlerFunc{
+			middleware.GinContextToContextMiddleware(),
+			middleware.UserLoaderMiddleWareProvider(usrv),
+		},
 		GQLHandler:  GraphqlHandler(module),
 		Playground:  PlaygroundHandler(),
 	}

@@ -27,6 +27,7 @@ func main() {
 			db.PostgresProvider,
 
 			// Services and Modules
+			services.UserServiceProvider,
 			services.ThoughtServiceProvider,
 			graph.ModuleProvider,
 

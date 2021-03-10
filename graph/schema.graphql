@@ -25,6 +25,7 @@ input NewThought {
 }
 
 type Mutation {
+  createUser(name: String!, email: String!): User
   createThought(input: NewThought!): Thought!
   updateThought(id: Int!, userId: Int!, input: NewThought!): Thought
   deleteThought(id: Int!, userId: Int!): Thought

@@ -10,18 +10,20 @@ import (
 // Resolver Struct
 type Resolver struct {
 	srv *services.ThoughtService
+	usrv *services.UserService
 }
 
 // Resolver Constructor
-func NewResolver(srv *services.ThoughtService) *Resolver {
+func NewResolver(srv *services.ThoughtService, usrv *services.UserService) *Resolver {
 	return &Resolver{
 		srv: srv,
+		usrv: usrv,
 	}
 }
 
 // Fx Provider
-func ModuleProvider(srv *services.ThoughtService) generated.Config {
+func ModuleProvider(srv *services.ThoughtService, usrv *services.UserService) generated.Config {
 	return generated.Config {
-		Resolvers: NewResolver(srv),
+		Resolvers: NewResolver(srv, usrv),
 	}
 }

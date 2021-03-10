@@ -5,10 +5,20 @@ package graph
 
 import (
 	"context"
-
 	"github.com/d-exclaimation/fx-graphql-kit/graph/generated"
 	"github.com/d-exclaimation/fx-graphql-kit/graph/model"
+	"github.com/d-exclaimation/fx-graphql-kit/server/middleware"
+	"github.com/vektah/gqlparser/v2/gqlerror"
+	"strconv"
 )
+
+func (r *mutationResolver) CreateUser(ctx context.Context, name string, email string) (*model.User, error) {
+	res, err := r.usrv.NewUser(name, email)
+	if err != nil {
+		return nil, err.ToGQLError()
+	}
+	return res.ToGraphQL(), nil
+}
 
 func (r *mutationResolver) CreateThought(ctx context.Context, input model.NewThought) (*model.Thought, error) {
 	res, err := r.srv.CreateNew(input)
@@ -52,11 +62,18 @@ func (r *queryResolver) Thought(ctx context.Context, id int) (*model.Thought, er
 }
 
 func (r *thoughtResolver) User(ctx context.Context, obj *model.Thought) (*model.User, error) {
-	return &model.User{
-		ID:    obj.UserID,
-		Name:  "anom",
-		Email: "someone-somewhere@gmail.com",
-	}, nil
+	// ID is usually string for like UUID but in this context I used uint
+	id, err := strconv.ParseUint(obj.UserID, 10, 64)
+	if err != nil {
+		return nil, gqlerror.Errorf("Cannot find User")
+	}
+
+	// Get the data from dataloader given inside the context object
+	user, err := middleware.For(ctx).UserById.Load(uint(id))
+	if err != nil || user == nil {
+		return nil, err
+	}
+	return user.ToGraphQL(), nil
 }
 
 // Mutation returns generated.MutationResolver implementation.

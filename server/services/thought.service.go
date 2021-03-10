@@ -18,26 +18,30 @@ import (
 
 // ThoughtService Struct
 type ThoughtService struct {
+	usrv *UserService
 	db *gorm.DB
 }
 
 // Fx Provider
-func ThoughtServiceProvider(db *gorm.DB) *ThoughtService {
+func ThoughtServiceProvider(db *gorm.DB, usrv *UserService) *ThoughtService {
 	return &ThoughtService{
 		db: db,
+		usrv: usrv,
 	}
 }
 
 // Methods
 func (srv *ThoughtService) CreateNew(input model.NewThought) (*entities.Thought, *errors.ServiceError) {
+	uid := uint(input.UserID)
 	thought := &entities.Thought{
 		Title:    input.Title,
 		Body:     input.Body,
 		ImageURL: input.ImageURL,
 		UserID:   uint(input.UserID),
 	}
-	if err := srv.db.Create(thought).Error; err != nil {
-		return nil, errors.NewServiceError(http.StatusInternalServerError, "Cannot connect to database")
+
+	if err := srv.usrv.AppendThought(uid, thought); err != nil {
+		return nil, err
 	}
 	return thought, nil
 }
@@ -63,6 +67,20 @@ func (srv *ThoughtService) GetOne(id int) (*entities.Thought, *errors.ServiceErr
 	}
 	return nil, errors.NewServiceError(http.StatusNotFound, "Cannot find Thought, Invalid ID")
 }
+
+func (srv *ThoughtService) GetOwner(id int) (*entities.User, *errors.ServiceError) {
+	curr, fail := srv.GetOne(id)
+	if fail != nil {
+		return nil, fail
+	}
+
+	user, fail := srv.usrv.GetUser(curr.UserID)
+	if fail != nil {
+		return nil, fail
+	}
+	return user, nil
+}
+
 
 func (srv *ThoughtService) UpdateOne(id int, userId int, input model.NewThought) (*entities.Thought, *errors.ServiceError) {
 	selected, err := srv.GetOne(id)

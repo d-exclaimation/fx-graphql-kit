@@ -26,7 +26,7 @@ func PostgresProvider() *gorm.DB {
 		log.Fatalln(err)
 	}
 
-	if err = conn.AutoMigrate(&entities.Thought{}); err != nil {
+	if err = conn.AutoMigrate(&entities.User{}, &entities.Thought{}); err != nil {
 		log.Fatalln(err)
 	}
 	return conn
