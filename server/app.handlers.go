@@ -31,7 +31,7 @@ func AppHandlersProvider(module generated.Config) *AppHandlers {
 		Middlewares: []echo.MiddlewareFunc{
 			middleware.EchoContextMiddleware,
 			em.LoggerWithConfig(em.LoggerConfig{
-				Format: color.New(color.BgGreen, color.FgWhite).Sprint(" ${status} ${method} ") + "| ${latency_human} | >> ${uri}\n",
+				Format: "${time_rfc3339_nano} |" + color.NewRGBStyle(color.RGB(200, 200, 200), color.HEX("#20bcaf", true)).Sprint(" ${status} ${method} ") + "| ${latency_human} | >> ${uri}\n",
 			}),
 		},
 		GQLHandler:  GraphqlHandler(module),
