@@ -13,37 +13,46 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/d-exclaimation/fx-graphql-kit/graph/generated"
 	"github.com/d-exclaimation/fx-graphql-kit/server/middleware"
-	"github.com/gin-gonic/gin"
+	"github.com/gookit/color"
+	"github.com/labstack/echo/v4"
+	em "github.com/labstack/echo/v4/middleware"
 )
 
 // AppHandlers / Controller
 type AppHandlers struct {
-	Middlewares []gin.HandlerFunc
-	GQLHandler  gin.HandlerFunc
-	Playground  gin.HandlerFunc
+	Middlewares []echo.MiddlewareFunc
+	GQLHandler  echo.HandlerFunc
+	Playground  echo.HandlerFunc
 }
 
 // Fx Provider
 func AppHandlersProvider(module generated.Config) *AppHandlers {
 	return &AppHandlers{
-		Middlewares: []gin.HandlerFunc{middleware.GinContextToContextMiddleware()},
+		Middlewares: []echo.MiddlewareFunc{
+			middleware.EchoContextMiddleware,
+			em.LoggerWithConfig(em.LoggerConfig{
+				Format: color.New(color.BgGreen, color.FgWhite).Sprint(" ${status} ${method} ") + "| ${latency_human} | >> ${uri}\n",
+			}),
+		},
 		GQLHandler:  GraphqlHandler(module),
 		Playground:  PlaygroundHandler(),
 	}
 }
 
 // GraphQL Query Handler
-func GraphqlHandler(module generated.Config) gin.HandlerFunc {
+func GraphqlHandler(module generated.Config) echo.HandlerFunc {
 	graphqlServer := handler.NewDefaultServer(generated.NewExecutableSchema(module))
-	return func(ctx *gin.Context) {
-		graphqlServer.ServeHTTP(ctx.Writer, ctx.Request)
+	return func(ctx echo.Context) error {
+		graphqlServer.ServeHTTP(ctx.Response().Writer, ctx.Request())
+		return nil
 	}
 }
 
 // Playground Handler
-func PlaygroundHandler() gin.HandlerFunc {
+func PlaygroundHandler() echo.HandlerFunc {
 	playgroundHandler := playground.Handler("Nodes-Graph API Playground", graphqlPath)
-	return func(ctx *gin.Context) {
-		playgroundHandler.ServeHTTP(ctx.Writer, ctx.Request)
+	return func(ctx echo.Context) error {
+		playgroundHandler.ServeHTTP(ctx.Response().Writer, ctx.Request())
+		return nil
 	}
 }

@@ -11,9 +11,8 @@ package server
 import (
 	"context"
 	"github.com/d-exclaimation/fx-graphql-kit/config"
-	"github.com/gin-gonic/gin"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/fx"
-	"net/http"
 )
 
 const (
@@ -22,27 +21,20 @@ const (
 )
 
 // Fx Provider
-func AppProvider(lifecycle fx.Lifecycle) *gin.Engine {
-	gin.SetMode(gin.ReleaseMode)
-	app := gin.Default()
+func AppProvider(lifecycle fx.Lifecycle) *echo.Echo {
+	app := echo.New()
 	port := config.GetPort()
-
-	// To Gracefully setup and shuts down http server
-	srv := &http.Server{
-		Addr:              ":" + port,
-		Handler:           app,
-	}
 
 	// Using Fx Lifecycle create start and stop functions to be invoke at appropriate condition
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go (func() {
-				_ = srv.ListenAndServe()
+				_ = app.Start(":" + port)
 			})()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			return srv.Shutdown(ctx)
+			return app.Shutdown(ctx)
 		},
 	})
 
@@ -50,14 +42,14 @@ func AppProvider(lifecycle fx.Lifecycle) *gin.Engine {
 }
 
 // Fx Invoke Middleware
-func InvokeMiddleWare(app *gin.Engine, handlers *AppHandlers) {
+func InvokeMiddleWare(app *echo.Echo, handlers *AppHandlers) {
 	for _, mw := range handlers.Middlewares {
 		app.Use(mw)
 	}
 }
 
 // Fx Invoke Handler
-func InvokeHandler(app *gin.Engine, handlers *AppHandlers) {
+func InvokeHandler(app *echo.Echo, handlers *AppHandlers) {
 	app.POST(graphqlPath, handlers.GQLHandler)
 	app.GET(entry, handlers.Playground)
 }

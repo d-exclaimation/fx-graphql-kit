@@ -1,14 +1,14 @@
 # fx-graphql-kit
 Simple GraphQL-API Reusable module / kit with 
 [`fx`](https://github.com/uber-go/fx),
-[`gin`](https://github.com/gin-gonic/gin),
+[`echo`](https://github.com/labstack/echo),
 [`gqlgen`](https://github.com/99designs/gqlgen), and
 [`gorm`](https://github.com/go-gorm/gorm)
 
 ### Stack of libraries and frameworks
 > 1. fx
 > 2. gqlgen
-> 3. gin
+> 3. echo 
 > 4. gorm
 
 ### What already existed here
