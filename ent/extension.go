@@ -1,36 +1,26 @@
 //
-//  thought.entities.go
-//  db
+//  extension.go
+//  extensions
 //
-//  Created by d-exclaimation on 7:24 AM.
+//  Created by d-exclaimation on 10:09 PM.
 //  Copyright © 2021 d-exclaimation. All rights reserved.
 //
 
-package entities
+package ent
 
 import (
 	"fmt"
 	"github.com/d-exclaimation/fx-graphql-kit/graph/model"
-	"gorm.io/gorm"
 )
 
-// Thought Database Entity
-type Thought struct {
-	gorm.Model
-	Title     string
-	Body      string
-	ImageURL  *string
-	UserID 	  uint
-}
-
 // Convert to GraphQL Schema
-func (s *Thought) ToGraphQL() *model.Thought {
+func (t *Thought) ToGraphQL() *model.Thought {
 	return &model.Thought{
-		ID:       fmt.Sprintf("%d", s.ID),
-		Title:    s.Title,
-		Body:     s.Body,
-		ImageURL: s.ImageURL,
-		UserID:   fmt.Sprintf("%d", s.UserID),
+		ID:       fmt.Sprintf("%d", t.ID),
+		Title:    t.Title,
+		Body:     t.Body,
+		ImageURL: &t.ImageURL,
+		UserID:   fmt.Sprintf("%d", t.UserId),
 	}
 }
 

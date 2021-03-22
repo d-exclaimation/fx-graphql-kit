@@ -24,7 +24,7 @@ func main() {
 			server.AppProvider,
 
 			// Postgres Database
-			db.PostgresProvider,
+			db.EntProvider,
 
 			// Services and Modules
 			services.ThoughtServiceProvider,

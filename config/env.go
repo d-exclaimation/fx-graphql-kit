@@ -13,7 +13,7 @@ import "os"
 func GetDatabaseURL() string {
 	dbURL := os.Getenv("DATABASE_URL")
 	if len(dbURL) < 1 {
-		dbURL = "postgres://127.0.0.1:5432/fxkit?sslmode=disable"
+		dbURL = "postgres://127.0.0.1:5432/entfx?sslmode=disable"
 	}
 	return dbURL
 }

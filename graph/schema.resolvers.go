@@ -11,7 +11,7 @@ import (
 )
 
 func (r *mutationResolver) CreateThought(ctx context.Context, input model.NewThought) (*model.Thought, error) {
-	res, err := r.srv.CreateNew(input)
+	res, err := r.srv.CreateNew(ctx, input)
 	if err != nil {
 		return nil, err.ToGQLError()
 	}
@@ -19,7 +19,7 @@ func (r *mutationResolver) CreateThought(ctx context.Context, input model.NewTho
 }
 
 func (r *mutationResolver) UpdateThought(ctx context.Context, id int, userID int, input model.NewThought) (*model.Thought, error) {
-	res, err := r.srv.UpdateOne(id, userID, input)
+	res, err := r.srv.UpdateOne(ctx, id, userID, input)
 	if err != nil {
 		return nil, err.ToGQLError()
 	}
@@ -27,7 +27,7 @@ func (r *mutationResolver) UpdateThought(ctx context.Context, id int, userID int
 }
 
 func (r *mutationResolver) DeleteThought(ctx context.Context, id int, userID int) (*model.Thought, error) {
-	res, err := r.srv.DeleteOne(id, userID)
+	res, err := r.srv.DeleteOne(ctx, id, userID)
 	if err != nil {
 		return nil, err.ToGQLError()
 	}
@@ -35,7 +35,7 @@ func (r *mutationResolver) DeleteThought(ctx context.Context, id int, userID int
 }
 
 func (r *queryResolver) Thoughts(ctx context.Context) ([]*model.Thought, error) {
-	res, err := r.srv.GetAll()
+	res, err := r.srv.GetAll(ctx)
 	if err != nil {
 		return nil, err.ToGQLError()
 	}
@@ -44,7 +44,7 @@ func (r *queryResolver) Thoughts(ctx context.Context) ([]*model.Thought, error) 
 }
 
 func (r *queryResolver) Thought(ctx context.Context, id int) (*model.Thought, error) {
-	res, err := r.srv.GetOne(id)
+	res, err := r.srv.GetOne(ctx, id)
 	if err != nil {
 		return nil, err.ToGQLError()
 	}

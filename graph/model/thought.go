@@ -1,5 +1,5 @@
 //
-//  thought.go
+//  extension.go
 //  model
 //
 //  Created by d-exclaimation on 7:10 AM.
