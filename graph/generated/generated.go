@@ -37,7 +37,6 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
-	Thought() ThoughtResolver
 }
 
 type DirectiveRoot struct {
@@ -45,22 +44,12 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Mutation struct {
-		CreateThought func(childComplexity int, input model.NewThought) int
-		DeleteThought func(childComplexity int, id int, userID int) int
-		UpdateThought func(childComplexity int, id int, userID int, input model.NewThought) int
+		NewUser func(childComplexity int, email string) int
 	}
 
 	Query struct {
-		Thought  func(childComplexity int, id int) int
-		Thoughts func(childComplexity int) int
-	}
-
-	Thought struct {
-		Body     func(childComplexity int) int
-		ID       func(childComplexity int) int
-		ImageURL func(childComplexity int) int
-		Title    func(childComplexity int) int
-		User     func(childComplexity int) int
+		User  func(childComplexity int, id *int) int
+		Users func(childComplexity int) int
 	}
 
 	User struct {
@@ -71,16 +60,11 @@ type ComplexityRoot struct {
 }
 
 type MutationResolver interface {
-	CreateThought(ctx context.Context, input model.NewThought) (*model.Thought, error)
-	UpdateThought(ctx context.Context, id int, userID int, input model.NewThought) (*model.Thought, error)
-	DeleteThought(ctx context.Context, id int, userID int) (*model.Thought, error)
+	NewUser(ctx context.Context, email string) (*model.User, error)
 }
 type QueryResolver interface {
-	Thoughts(ctx context.Context) ([]*model.Thought, error)
-	Thought(ctx context.Context, id int) (*model.Thought, error)
-}
-type ThoughtResolver interface {
-	User(ctx context.Context, obj *model.Thought) (*model.User, error)
+	User(ctx context.Context, id *int) (*model.User, error)
+	Users(ctx context.Context) ([]*model.User, error)
 }
 
 type executableSchema struct {
@@ -98,95 +82,36 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Mutation.createThought":
-		if e.complexity.Mutation.CreateThought == nil {
+	case "Mutation.newUser":
+		if e.complexity.Mutation.NewUser == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_createThought_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_newUser_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateThought(childComplexity, args["input"].(model.NewThought)), true
+		return e.complexity.Mutation.NewUser(childComplexity, args["email"].(string)), true
 
-	case "Mutation.deleteThought":
-		if e.complexity.Mutation.DeleteThought == nil {
+	case "Query.user":
+		if e.complexity.Query.User == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_deleteThought_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_user_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteThought(childComplexity, args["id"].(int), args["userId"].(int)), true
+		return e.complexity.Query.User(childComplexity, args["id"].(*int)), true
 
-	case "Mutation.updateThought":
-		if e.complexity.Mutation.UpdateThought == nil {
+	case "Query.users":
+		if e.complexity.Query.Users == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_updateThought_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Mutation.UpdateThought(childComplexity, args["id"].(int), args["userId"].(int), args["input"].(model.NewThought)), true
-
-	case "Query.thought":
-		if e.complexity.Query.Thought == nil {
-			break
-		}
-
-		args, err := ec.field_Query_thought_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.Thought(childComplexity, args["id"].(int)), true
-
-	case "Query.thoughts":
-		if e.complexity.Query.Thoughts == nil {
-			break
-		}
-
-		return e.complexity.Query.Thoughts(childComplexity), true
-
-	case "Thought.body":
-		if e.complexity.Thought.Body == nil {
-			break
-		}
-
-		return e.complexity.Thought.Body(childComplexity), true
-
-	case "Thought.id":
-		if e.complexity.Thought.ID == nil {
-			break
-		}
-
-		return e.complexity.Thought.ID(childComplexity), true
-
-	case "Thought.imageURL":
-		if e.complexity.Thought.ImageURL == nil {
-			break
-		}
-
-		return e.complexity.Thought.ImageURL(childComplexity), true
-
-	case "Thought.title":
-		if e.complexity.Thought.Title == nil {
-			break
-		}
-
-		return e.complexity.Thought.Title(childComplexity), true
-
-	case "Thought.user":
-		if e.complexity.Thought.User == nil {
-			break
-		}
-
-		return e.complexity.Thought.User(childComplexity), true
+		return e.complexity.Query.Users(childComplexity), true
 
 	case "User.email":
 		if e.complexity.User.Email == nil {
@@ -273,36 +198,19 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "graph/schema.graphql", Input: `type Thought {
-  id: ID!
-  title: String!
-  body: String!
-  imageURL: String
-  user: User!
-}
-
-type User {
+	{Name: "graph/schema.graphql", Input: `type User {
   id: ID!
   name: String!
   email: String!
 }
 
 type Query {
-  thoughts: [Thought!]!
-  thought(id: Int!): Thought
-}
-
-input NewThought {
-  title: String!
-  body: String!
-  imageURL: String
-  userId: Int!
+  user(id: Int): User
+  users: [User!]!
 }
 
 type Mutation {
-  createThought(input: NewThought!): Thought!
-  updateThought(id: Int!, userId: Int!, input: NewThought!): Thought
-  deleteThought(id: Int!, userId: Int!): Thought
+    newUser(email: String!): User!
 }`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
@@ -311,75 +219,18 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Mutation_createThought_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Mutation_newUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 model.NewThought
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNNewThought2githubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐNewThought(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_deleteThought_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 int
-	if tmp, ok := rawArgs["userId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["userId"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_updateThought_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 int
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
-	var arg1 int
-	if tmp, ok := rawArgs["userId"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-		arg1, err = ec.unmarshalNInt2int(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["userId"] = arg1
-	var arg2 model.NewThought
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg2, err = ec.unmarshalNNewThought2githubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐNewThought(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg2
+	args["email"] = arg0
 	return args, nil
 }
 
@@ -398,13 +249,13 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_thought_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 int
+	var arg0 *int
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -451,7 +302,7 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
-func (ec *executionContext) _Mutation_createThought(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_newUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -468,7 +319,7 @@ func (ec *executionContext) _Mutation_createThought(ctx context.Context, field g
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_createThought_args(ctx, rawArgs)
+	args, err := ec.field_Mutation_newUser_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -476,7 +327,7 @@ func (ec *executionContext) _Mutation_createThought(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateThought(rctx, args["input"].(model.NewThought))
+		return ec.resolvers.Mutation().NewUser(rctx, args["email"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -488,12 +339,12 @@ func (ec *executionContext) _Mutation_createThought(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Thought)
+	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalNThought2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐThought(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_updateThought(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -501,7 +352,7 @@ func (ec *executionContext) _Mutation_updateThought(ctx context.Context, field g
 		}
 	}()
 	fc := &graphql.FieldContext{
-		Object:     "Mutation",
+		Object:     "Query",
 		Field:      field,
 		Args:       nil,
 		IsMethod:   true,
@@ -510,7 +361,7 @@ func (ec *executionContext) _Mutation_updateThought(ctx context.Context, field g
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_updateThought_args(ctx, rawArgs)
+	args, err := ec.field_Query_user_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -518,7 +369,7 @@ func (ec *executionContext) _Mutation_updateThought(ctx context.Context, field g
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateThought(rctx, args["id"].(int), args["userId"].(int), args["input"].(model.NewThought))
+		return ec.resolvers.Query().User(rctx, args["id"].(*int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -527,51 +378,12 @@ func (ec *executionContext) _Mutation_updateThought(ctx context.Context, field g
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Thought)
+	res := resTmp.(*model.User)
 	fc.Result = res
-	return ec.marshalOThought2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐThought(ctx, field.Selections, res)
+	return ec.marshalOUser2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Mutation_deleteThought(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Mutation_deleteThought_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteThought(rctx, args["id"].(int), args["userId"].(int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.Thought)
-	fc.Result = res
-	return ec.marshalOThought2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐThought(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_thoughts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -589,7 +401,7 @@ func (ec *executionContext) _Query_thoughts(ctx context.Context, field graphql.C
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Thoughts(rctx)
+		return ec.resolvers.Query().Users(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -601,48 +413,9 @@ func (ec *executionContext) _Query_thoughts(ctx context.Context, field graphql.C
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Thought)
+	res := resTmp.([]*model.User)
 	fc.Result = res
-	return ec.marshalNThought2ᚕᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐThoughtᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_thought(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_thought_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	fc.Args = args
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Thought(rctx, args["id"].(int))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*model.Thought)
-	fc.Result = res
-	return ec.marshalOThought2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐThought(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚕᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐUserᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -714,178 +487,6 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	res := resTmp.(*introspection.Schema)
 	fc.Result = res
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Thought_id(ctx context.Context, field graphql.CollectedField, obj *model.Thought) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Thought",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Thought_title(ctx context.Context, field graphql.CollectedField, obj *model.Thought) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Thought",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Title, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Thought_body(ctx context.Context, field graphql.CollectedField, obj *model.Thought) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Thought",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Body, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Thought_imageURL(ctx context.Context, field graphql.CollectedField, obj *model.Thought) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Thought",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   false,
-		IsResolver: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ImageURL, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Thought_user(ctx context.Context, field graphql.CollectedField, obj *model.Thought) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:     "Thought",
-		Field:      field,
-		Args:       nil,
-		IsMethod:   true,
-		IsResolver: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Thought().User(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.User)
-	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
@@ -2080,50 +1681,6 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputNewThought(ctx context.Context, obj interface{}) (model.NewThought, error) {
-	var it model.NewThought
-	var asMap = obj.(map[string]interface{})
-
-	for k, v := range asMap {
-		switch k {
-		case "title":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
-			it.Title, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "body":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("body"))
-			it.Body, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "imageURL":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("imageURL"))
-			it.ImageURL, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "userId":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("userId"))
-			it.UserID, err = ec.unmarshalNInt2int(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2147,15 +1704,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "createThought":
-			out.Values[i] = ec._Mutation_createThought(ctx, field)
+		case "newUser":
+			out.Values[i] = ec._Mutation_newUser(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "updateThought":
-			out.Values[i] = ec._Mutation_updateThought(ctx, field)
-		case "deleteThought":
-			out.Values[i] = ec._Mutation_deleteThought(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2182,74 +1735,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "thoughts":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_thoughts(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "thought":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_thought(ctx, field)
-				return res
-			})
-		case "__type":
-			out.Values[i] = ec._Query___type(ctx, field)
-		case "__schema":
-			out.Values[i] = ec._Query___schema(ctx, field)
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var thoughtImplementors = []string{"Thought"}
-
-func (ec *executionContext) _Thought(ctx context.Context, sel ast.SelectionSet, obj *model.Thought) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, thoughtImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("Thought")
-		case "id":
-			out.Values[i] = ec._Thought_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "title":
-			out.Values[i] = ec._Thought_title(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "body":
-			out.Values[i] = ec._Thought_body(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "imageURL":
-			out.Values[i] = ec._Thought_imageURL(ctx, field, obj)
 		case "user":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
@@ -2258,12 +1743,27 @@ func (ec *executionContext) _Thought(ctx context.Context, sel ast.SelectionSet, 
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Thought_user(ctx, field, obj)
+				res = ec._Query_user(ctx, field)
+				return res
+			})
+		case "users":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_users(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
 				return res
 			})
+		case "__type":
+			out.Values[i] = ec._Query___type(ctx, field)
+		case "__schema":
+			out.Values[i] = ec._Query___schema(ctx, field)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2587,26 +2087,6 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
-func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
-	res, err := graphql.UnmarshalInt(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
-	res := graphql.MarshalInt(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNNewThought2githubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐNewThought(ctx context.Context, v interface{}) (model.NewThought, error) {
-	res, err := ec.unmarshalInputNewThought(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2622,11 +2102,11 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNThought2githubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐThought(ctx context.Context, sel ast.SelectionSet, v model.Thought) graphql.Marshaler {
-	return ec._Thought(ctx, sel, &v)
+func (ec *executionContext) marshalNUser2githubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
+	return ec._User(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNThought2ᚕᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐThoughtᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Thought) graphql.Marshaler {
+func (ec *executionContext) marshalNUser2ᚕᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐUserᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.User) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -2650,7 +2130,7 @@ func (ec *executionContext) marshalNThought2ᚕᚖgithubᚗcomᚋdᚑexclaimatio
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNThought2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐThought(ctx, sel, v[i])
+			ret[i] = ec.marshalNUser2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐUser(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -2661,20 +2141,6 @@ func (ec *executionContext) marshalNThought2ᚕᚖgithubᚗcomᚋdᚑexclaimatio
 	}
 	wg.Wait()
 	return ret
-}
-
-func (ec *executionContext) marshalNThought2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐThought(ctx context.Context, sel ast.SelectionSet, v *model.Thought) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._Thought(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNUser2githubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v model.User) graphql.Marshaler {
-	return ec._User(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
@@ -2940,6 +2406,21 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return graphql.MarshalBoolean(*v)
 }
 
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return graphql.MarshalInt(*v)
+}
+
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2964,11 +2445,11 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return graphql.MarshalString(*v)
 }
 
-func (ec *executionContext) marshalOThought2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐThought(ctx context.Context, sel ast.SelectionSet, v *model.Thought) graphql.Marshaler {
+func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋdᚑexclaimationᚋfxᚑgraphqlᚑkitᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
-	return ec._Thought(ctx, sel, v)
+	return ec._User(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

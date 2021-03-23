@@ -9,10 +9,8 @@
 package main
 
 import (
-	"github.com/d-exclaimation/fx-graphql-kit/db"
 	"github.com/d-exclaimation/fx-graphql-kit/graph"
 	"github.com/d-exclaimation/fx-graphql-kit/server"
-	"github.com/d-exclaimation/fx-graphql-kit/server/services"
 	"go.uber.org/fx"
 )
 
@@ -20,14 +18,14 @@ import (
 func main() {
 	fx.New(
 		fx.Provide(
-			// Gin App
+			// Server application
 			server.AppProvider,
 
 			// Postgres Database
-			db.EntProvider,
 
-			// Services and Modules
-			services.ThoughtServiceProvider,
+			// Services
+
+			// GraphQL Module
 			graph.ModuleProvider,
 
 			// Handlers / Controllers

@@ -8,6 +8,7 @@ require (
 	github.com/gookit/color v1.3.8 // indirect
 	github.com/labstack/echo/v4 v4.2.1
 	github.com/lib/pq v1.10.0 // indirect
+	github.com/urfave/cli/v2 v2.1.1 // indirect
 	github.com/vektah/gqlparser/v2 v2.1.0
 	go.uber.org/fx v1.13.1
 	golang.org/x/crypto v0.0.0-20210220033148-5ea612d1eb83 // indirect
