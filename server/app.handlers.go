@@ -13,9 +13,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/d-exclaimation/fx-graphql-kit/graph/generated"
 	"github.com/d-exclaimation/fx-graphql-kit/server/middleware"
-	"github.com/gookit/color"
 	"github.com/labstack/echo/v4"
-	em "github.com/labstack/echo/v4/middleware"
 )
 
 // AppHandlers / Controller
@@ -30,9 +28,7 @@ func AppHandlersProvider(module generated.Config) *AppHandlers {
 	return &AppHandlers{
 		Middlewares: []echo.MiddlewareFunc{
 			middleware.EchoContextMiddleware,
-			em.LoggerWithConfig(em.LoggerConfig{
-				Format: "${time_rfc3339_nano} |" + color.NewRGBStyle(color.RGB(200, 200, 200), color.HEX("#20bcaf", true)).Sprint(" ${status} ${method} ") + "| ${latency_human} | >> ${uri}\n",
-			}),
+			middleware.EndpointLoggerMiddleware,
 		},
 		GQLHandler:  GraphqlHandler(module),
 		Playground:  PlaygroundHandler(),
