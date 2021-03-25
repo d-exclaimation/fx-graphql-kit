@@ -30,7 +30,7 @@ func ThoughtServiceProvider(db *ent.Client) *ThoughtService {
 }
 
 // Methods
-func (srv *ThoughtService) CreateNew(ctx context.Context, input model.NewThought) (*ent.Thought, *errors.ServiceError) {
+func (srv *ThoughtService) CreateNew(ctx context.Context, input model.NewThought) (*ent.Thought, error) {
     // Query: INSERT INTO thoughts (title, body, image_url, user_id) VALUES (?, ?, ?, ?) RETURNING *;
 	res, err := srv.client.
 		Thought.Create().
@@ -45,7 +45,7 @@ func (srv *ThoughtService) CreateNew(ctx context.Context, input model.NewThought
 	return res, nil
 }
 
-func (srv *ThoughtService) GetAll(ctx context.Context) (ent.ThoughtsArray, *errors.ServiceError) {
+func (srv *ThoughtService) GetAll(ctx context.Context) (ent.ThoughtsArray, error) {
     // Query: SELECT * FROM thoughts;
 	res, err := srv.client.
 		Thought.Query().
@@ -56,7 +56,7 @@ func (srv *ThoughtService) GetAll(ctx context.Context) (ent.ThoughtsArray, *erro
 	return res, nil
 }
 
-func (srv *ThoughtService) GetOne(ctx context.Context, id int) (*ent.Thought, *errors.ServiceError) {
+func (srv *ThoughtService) GetOne(ctx context.Context, id int) (*ent.Thought, error) {
     // Query: SELECT * FROM thoughts WHERE id=?;
 	res, err := srv.client.
 		Thought.Query().
@@ -68,10 +68,10 @@ func (srv *ThoughtService) GetOne(ctx context.Context, id int) (*ent.Thought, *e
 	return res, nil
 }
 
-func (srv *ThoughtService) UpdateOne(ctx context.Context, id int, userId int, input model.NewThought) (*ent.Thought, *errors.ServiceError) {
-	curr, fail := srv.GetOne(ctx, id)
-	if fail != nil {
-		return nil, fail
+func (srv *ThoughtService) UpdateOne(ctx context.Context, id int, userId int, input model.NewThought) (*ent.Thought, error) {
+	curr, err := srv.GetOne(ctx, id)
+	if err != nil {
+		return nil, err
 	}
 
 	if curr.UserId != int64(userId) {
@@ -91,10 +91,10 @@ func (srv *ThoughtService) UpdateOne(ctx context.Context, id int, userId int, in
 	return res, nil
 }
 
-func (srv *ThoughtService) DeleteOne(ctx context.Context, id int, userId int) (*ent.Thought, *errors.ServiceError) {
-	curr, fail := srv.GetOne(ctx, id)
-	if fail != nil {
-		return nil, fail
+func (srv *ThoughtService) DeleteOne(ctx context.Context, id int, userId int) (*ent.Thought, error) {
+	curr, err := srv.GetOne(ctx, id)
+	if err != nil {
+		return nil, err
 	}
 
 	if curr.UserId != int64(userId) {
@@ -110,7 +110,6 @@ func (srv *ThoughtService) DeleteOne(ctx context.Context, id int, userId int) (*
 
 
 func handleImageURL(url *string) string {
-	// For some reason ent and gqlgen uses different technique for nullable
 	imageurl := ""
 	if url != nil {
 		imageurl = *url

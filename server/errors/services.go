@@ -8,6 +8,7 @@
 
 package errors
 
+import "fmt"
 
 type ServiceError struct {
 	Type 	 uint
@@ -19,4 +20,8 @@ func NewServiceError(httpStatus uint, message string) *ServiceError {
 		Type:     httpStatus,
 		Response: message,
 	}
+}
+
+func (err *ServiceError) Error() string {
+	return fmt.Sprintf("[%d]: %s", err.Type, err.Response)
 }
