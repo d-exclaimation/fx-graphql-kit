@@ -31,7 +31,7 @@ func ThoughtServiceProvider(db *ent.Client) *ThoughtService {
 
 // Methods
 func (srv *ThoughtService) CreateNew(ctx context.Context, input model.NewThought) (*ent.Thought, *errors.ServiceError) {
-	// Grab the client and create and fill in all fields
+    // Query: INSERT INTO thoughts (title, body, image_url, user_id) VALUES (?, ?, ?, ?) RETURNING *;
 	res, err := srv.client.
 		Thought.Create().
 		SetTitle(input.Title).
@@ -46,6 +46,7 @@ func (srv *ThoughtService) CreateNew(ctx context.Context, input model.NewThought
 }
 
 func (srv *ThoughtService) GetAll(ctx context.Context) (ent.ThoughtsArray, *errors.ServiceError) {
+    // Query: SELECT * FROM thoughts;
 	res, err := srv.client.
 		Thought.Query().
 		All(ctx)
@@ -56,6 +57,7 @@ func (srv *ThoughtService) GetAll(ctx context.Context) (ent.ThoughtsArray, *erro
 }
 
 func (srv *ThoughtService) GetOne(ctx context.Context, id int) (*ent.Thought, *errors.ServiceError) {
+    // Query: SELECT * FROM thoughts WHERE id=?;
 	res, err := srv.client.
 		Thought.Query().
 		Where(thought.ID(id)).
@@ -76,6 +78,7 @@ func (srv *ThoughtService) UpdateOne(ctx context.Context, id int, userId int, in
 		return nil, errors.NewServiceError(http.StatusForbidden, "Unauthorized permission to update data")
 	}
 
+    // Query: UPDATE thoughts SET title=?, body=?, image_url=? WHERE id=? RETURNING *;
 	res, err := srv.client.
 		Thought.UpdateOneID(id).
 		SetTitle(input.Title).
@@ -98,6 +101,7 @@ func (srv *ThoughtService) DeleteOne(ctx context.Context, id int, userId int) (*
 		return nil, errors.NewServiceError(http.StatusForbidden, "Unauthorized permission to update data")
 	}
 
+    // Query: DELETE FROM thoughts WHERE id=?;
 	if err := srv.client.Thought.DeleteOneID(id).Exec(ctx); err != nil {
 		return nil, errors.NewServiceError(http.StatusInternalServerError, err.Error())
 	}

@@ -25,7 +25,7 @@ func AppProvider(lifecycle fx.Lifecycle) *echo.Echo {
 	app := echo.New()
 	port := config.GetPort()
 
-	// Using Fx Lifecycle create start and stop functions to be invoke at appropriate condition
+	// Using Fx Lifecycle to start the HTTP on a seperate goroutine on start, and shutdown it on end
 	lifecycle.Append(fx.Hook{
 		OnStart: func(ctx context.Context) error {
 			go (func() {

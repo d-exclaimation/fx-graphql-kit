@@ -20,13 +20,13 @@ import (
 func main() {
 	fx.New(
 		fx.Provide(
-			// Gin App
+			// Server HTTP App
 			server.AppProvider,
 
-			// Postgres Database
+			// Database connection / client
 			db.EntProvider,
 
-			// Services and Modules
+			// Services and Modules / Configuration
 			services.ThoughtServiceProvider,
 			graph.ModuleProvider,
 
@@ -34,7 +34,7 @@ func main() {
 			server.AppHandlersProvider,
 		),
 		fx.Invoke(
-			// Gin Middleware and Endpoints Invoker
+			// HTTP Middleware and Endpoints Invoker
 			server.InvokeMiddleWare,
 			server.InvokeHandler,
 		),

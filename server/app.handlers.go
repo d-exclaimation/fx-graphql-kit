@@ -30,6 +30,7 @@ func AppHandlersProvider(module generated.Config) *AppHandlers {
 	return &AppHandlers{
 		Middlewares: []echo.MiddlewareFunc{
 			middleware.EchoContextMiddleware,
+            // TODO: Move to middleware directory
 			em.LoggerWithConfig(em.LoggerConfig{
 				Format: "${time_rfc3339_nano} |" + color.NewRGBStyle(color.RGB(200, 200, 200), color.HEX("#20bcaf", true)).Sprint(" ${status} ${method} ") + "| ${latency_human} | >> ${uri}\n",
 			}),
